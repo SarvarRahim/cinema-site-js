@@ -1,0 +1,41 @@
+.movie__reting::before {
+  display: block;
+  content: "";
+  width: 20px;
+  height: 20px;
+  background-image: url("../img/icon-star.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.movie__year::before {
+  display: block;
+  content: "";
+  width: 17px;
+  height: 17px;
+  background-image: url("../img/icon-calendar.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  margin-right: 4px;
+}
+
+.movie__date::before {
+  display: block;
+  content: "";
+  width: 19px;
+  height: 19px;
+  background-image: url("../img/icon-clock.svg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  margin-right: 3px;
+}
+
+.movie__name {
+  max-width: 100%;
+}
+
+@media only screen and (min-width: 1200px) {
+  .container {
+    max-width: 1300px;
+  }
+}
