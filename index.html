@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JS lesson 9</title>
-  <link rel="stylesheet" href="css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/bootstrap5.min.css">
   <style>
     .movie__img {
       object-fit: cover;
@@ -17,28 +17,39 @@
   <div class="movies container-xl">
     <header class="py-3 mb-3">
       <h1 class="mb-0 display-6 text-center">Movies</h1>
+      <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#modal-watch-list">WatchList</button>
     </header>
 
     <section>
       <h2 class="visually-hidden">Movies list</h2>
 
       <form class="row mb-3 js-movie-search-form" action="https://echo.htmlacademy.ru" method="GET">
-        <div class="col-md-3">
+        <div class="col-md-2">
           <input class="form-control js-movie-search-input" type="search" name="title" placeholder="Movie title" aria-label="Movie title">
-        </div>
-        <div class="col-md-3">
-          <input id="do" class="form-control js-do-year" type="text" placeholder="year do">
-        </div>
-        <div class="col-md-3">
-          <input id="end" class="form-control js-end-year" type="text" placeholder="year end">
         </div>
         <div class="col-md-3">
           <select class="form-control" name="genre" aria-label="Genre">
             <option value="All">All</option>
           </select>
         </div>
-        <div class="col-md-3">
-          <button id="searchButton" class="btn btn-secondary" type="submit">Search</button>
+        <div class="col-md-2">
+          <input class="form-control js-start-year-input" type="number" name="min_year" aria-label="Start year" placeholder="Start year">
+        </div>
+        <div class="col-md-2">
+          <input class="form-control js-end-year-input" type="number" name="max_year" aria-label="End year" placeholder="End year">
+        </div>
+        <div class="col-md-2">
+          <select class="form-control js-sort-select" name="sort" aria-label="Sorting">
+            <option value="az">A-Z</option>
+            <option value="za">Z-A</option>
+            <option value="rating_asc">Rating low-high</option>
+            <option value="rating_desc">Rating high-low</option>
+            <option value="year_asc">Year (old-new)</option>
+            <option value="year_desc">Year (new-old)</option>
+          </select>
+        </div>
+        <div class="col-md-1">
+          <button class="btn btn-primary" type="submit">Search</button>
         </div>
       </form>
 
@@ -87,6 +98,7 @@
               <p class="movie-info-modal__summary">Lorem ipsum dolor sit amet consectetur adipisicing elit. Nihil itaque impedit doloribus! Aperiam vero nostrum quaerat quos magnam molestiae hic officia eveniet similique eligendi. Voluptate obcaecati deserunt veritatis porro laboriosam?</p>
               <div>
                 <a class="movie-info-modal__imdb-link" href="#" target="_blank">Show on IMDb</a>
+                <button class="flex-grow-1 btn btn-outline-success btn-sm js-bookmark-button">Bookmark</button>
               </div>
             </div>
           </div>
@@ -95,8 +107,50 @@
     </div>
   </div>
 
+<!-- PAGINATION  -->
+ <div class="pagination-wrapper d-flex justify-content-center align-items-center mb-4">
+   <a class="btn btn-outline-primary js-prev-page-link" href="#"><</a>
+  <ul class="list-unstyled pagination mb-0">
+    <li class="page-item active">
+      <a class="page-link" href="#">1</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="#">2</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="#">3</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="#">4</a>
+    </li>
+    <li class="page-item">
+      <a class="page-link" href="#">5</a>
+    </li>
+  </ul>
+  <a class="btn btn-outline-primary js-next-page-link" href="#">></a>
+ </div>
+
+ <!-- WATCH LIST MODAL -->
+ <div class="watchlist-modal modal fade" id="modal-watch-list">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-body">
+    <h3 class="watch-list-title text-center">Watch list</h3>
+    <ul class="watchlist-modal__list list-group">
+
+    </ul>
+      </div>
+    </div>
+  </div>
+</div>
 
   <!-- TEMPLATES -->
+<template>
+  <li class="page-item active">
+    <a class="page-link" href="#">1</a>
+  </li>
+</template>
+
   <template id="movies-item-template">
     <div class="movies__item col-sm-6 col-md-4 mb-4">
       <div class="movie card h-100">
@@ -109,7 +163,7 @@
               <span class="movie__rating">7.7</span>
             </span>
             <span class="d-flex align-items-center me-2">
-              <img class="me-1" src="img/icon-calendar.svg" alt="" width="16" height="16">
+              <img class="me-1" src="img/icon-calendar-event.svg" alt="" width="16" height="16">
               <span class="movie__year">2001</span>
             </span>
             <span class="d-flex align-items-center ">
@@ -118,7 +172,10 @@
             </span>
           </div>
           <p class="movie__categories card-text">Thriller, Comedy, Action</p>
-          <button class="d-block w-100 mt-auto btn btn-info btn-sm text-white js-more-info-button" data-bs-toggle="modal" data-bs-target="#more-info-modal">More info</button>
+          <div class="d-flex mt-auto">
+            <button class="flex-grow-1 btn btn-info btn-sm me-3 text-white js-more-info-button" data-bs-toggle="modal" data-bs-target="#more-info-modal">More info</button>
+            <button class="flex-grow-1 btn btn-outline-success btn-sm js-bookmark-button">Bookmark</button>
+          </div>
         </div>
       </div>
     </div>
@@ -127,5 +184,6 @@
   <script src="js/bootstrap5.bundle.min.js"></script>
   <script src="js/normalized-movies.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/pagination.js"></script>
 </body>
 </html>

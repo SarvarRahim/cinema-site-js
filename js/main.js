@@ -1,14 +1,19 @@
+// GLOBAL VARS
 const genres = [];
+const watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 
+// SEARCH FORM
 const elMovieSearchForm = document.querySelector('.js-movie-search-form');
 const elMovieSearchInput = elMovieSearchForm.querySelector('.js-movie-search-input');
-const elMovieSearchYear = document.querySelector('.js-do-year');
-const elMovieSearchYearEnd = document.querySelector('.js-end-year');
 const elGenresSelect = elMovieSearchForm.querySelector('select');
+const elMinYearInput = elMovieSearchForm.querySelector('.js-start-year-input');
+const elMaxYearInput = elMovieSearchForm.querySelector('.js-end-year-input');
+const elSortSelect = elMovieSearchForm.querySelector('.js-sort-select');
+
+// RESULT
 const elMoviesList = document.querySelector('.movies__list');
-
+// TEMPLATE
 const elMoviesItemTemplate = document.querySelector('#movies-item-template').content;
-
 
 // MODAL
 const elMovieInfoModal = document.querySelector('.movie-info-modal');
@@ -20,8 +25,10 @@ const elMovieInfoModalIFrame = elMovieInfoModal.querySelector('.movie-info-modal
 const elMovieInfoModalCategories = elMovieInfoModal.querySelector('.movie-info-modal__categories');
 const elMovieInfoModalSummary = elMovieInfoModal.querySelector('.movie-info-modal__summary');
 const elMovieInfoModalImdbLink = elMovieInfoModal.querySelector('.movie-info-modal__imdb-link');
+const elMovieInfoModalBookmarkButton = elMovieInfoModal.querySelector('.js-bookmark-button');
 
 
+// FUNCTIONS
 function getUniqueGenres () {
   movies.forEach(movie => {
     movie.categories.forEach(category => {
@@ -48,7 +55,7 @@ function getHoursStringFromMinutes (minutes) {
   return `${Math.floor(minutes / 60)} hrs ${minutes % 60} mins`;
 }
 
-function showMovies (movies) {
+function showMovies (movies, titleRegex = '') {
   elMoviesList.innerHTML = '';
   const elMoviesFragment = document.createDocumentFragment();
 
@@ -56,15 +63,36 @@ function showMovies (movies) {
     const elNewMoviesItem = elMoviesItemTemplate.cloneNode(true);
     elNewMoviesItem.querySelector('.movie__img').src = movie.youtubePoster;
     elNewMoviesItem.querySelector('.movie__img').alt = `${movie.title} poster`;
-    elNewMoviesItem.querySelector('.movie__title').textContent = movie.title;
+
+    if (titleRegex.source !== '(?:)' && titleRegex) {
+      elNewMoviesItem.querySelector('.movie__title').innerHTML = movie.title.replace(titleRegex, `<mark class="p-0" style="background-color: yellow;">${titleRegex.source}</mark>`);
+    } else {
+      elNewMoviesItem.querySelector('.movie__title').textContent = movie.title;
+    }
+
     elNewMoviesItem.querySelector('.movie__rating').textContent = movie.imdbRating;
     elNewMoviesItem.querySelector('.movie__year').textContent = movie.year;
     elNewMoviesItem.querySelector('.movie__duration').textContent = getHoursStringFromMinutes(movie.runtime);
     elNewMoviesItem.querySelector('.movie__categories').textContent = movie.categories.join(', ');
-    elNewMoviesItem.querySelector('.js-more-info-button').dataset.imdbId = movie.imdbId;
+    elNewMoviesItem.querySelector('.js-more-info-button').dataset.imdbId = movie.imdbId
+   elNewMoviesItem.querySelector('.js-bookmark-button').dataset.imdbId = movie.imdbId
+   const elBookmarkBtn = elNewMoviesItem.querySelector('.js-bookmark-button');
+    elBookmarkBtn.dataset.imdbId = movie.imdbId;
+   const indexMovieInWatchList = watchlist.findIndex(movie => movie.imdbId === elBookmarkBtn.dataset.imdbId);
 
-    elMoviesFragment.appendChild(elNewMoviesItem);
+   if (indexMovieInWatchList > -1) {
+    watchlist.push(movie);
+    elBookmarkBtn.classList.remove('btn-outline-success')
+    elBookmarkBtn.classList.add('btn-success');
+    elBookmarkBtn.textContent = 'Bookmarked ✔'
+  } else {
+    elBookmarkBtn.classList.add('btn-outline-success')
+    elBookmarkBtn.classList.remove('btn-success');
+    elBookmarkBtn.textContent = 'Bookmark'
   }
+
+  elMoviesFragment.appendChild(elNewMoviesItem);
+}
 
   elMoviesList.appendChild(elMoviesFragment);
 }
@@ -80,57 +108,164 @@ function updateMovieInfoModal (imdbId) {
   elMovieInfoModalCategories.textContent = movie.categories.join(', ');
   elMovieInfoModalSummary.textContent = movie.summary;
   elMovieInfoModalImdbLink.href = `https://www.imdb.com/title/${movie.imdbId}`;
-}
+  elMovieInfoModalBookmarkButton.dataset.imdbId = movie.imdbId;
 
-elMoviesList.addEventListener('click', evt => {
-  if (evt.target.matches('.js-more-info-button')) {
-    updateMovieInfoModal(evt.target.dataset.imdbId);
+  const indexMovieInWatchList = watchlist.findIndex(movie => movie.imdbId === imdbId);
+
+  if (indexMovieInWatchList > -1) {
+    elMovieInfoModalBookmarkButton.classList.add('btn-success');
+    elMovieInfoModalBookmarkButton.classList.remove('btn-outline-success');
+    elMovieInfoModalBookmarkButton.textContent = 'Bookmarked ✔';
+  } else {
+    elMovieInfoModalBookmarkButton.classList.remove('btn-success');
+    elMovieInfoModalBookmarkButton.classList.add('btn-outline-success');
+    elMovieInfoModalBookmarkButton.textContent = 'Bookmark';
   }
-});
-
-elMovieInfoModal.addEventListener('hidden.bs.modal', () => {
-  elMovieInfoModalIFrame.src = '';
-});
-
-function findMovies (titleRegex,yearDo,yearEnd) {
-     let resultYearDo = String(yearDo).split('/')
-     let resultYearEnd = String(yearEnd).split('/')
-     if(resultYearDo[1] === '(?:)' && resultYearEnd[1] === '(?:)'){
-        let result =  movies.filter(movie => movie.title.match(titleRegex) &&
-        (elGenresSelect.value === 'All' || movie.categories.includes(elGenresSelect.value)))
-        return result
-     }
-      let result =  movies.filter(movie => movie.title.match(titleRegex) &&
-      (elGenresSelect.value === 'All' || movie.categories.includes(elGenresSelect.value)))
-      let answer = result.filter(val => (+resultYearDo[1] ? val.year >= +resultYearDo[1] : val.year <= +resultYearEnd[1] ) && (+resultYearEnd[1] ? val.year <= +resultYearEnd[1] : val.year >= +resultYearDo[1] ))
-      return answer.sort((a,b) => a.year - b.year)
 }
 
+//WATCHLIST-MODAL-LIST
 
+const elWatchListModal = document.querySelector('.watchlist-modal');
+const elWatchListALL = elWatchListModal.querySelector('.watchlist-modal__list');
+const watchListFragment = document.createDocumentFragment();
+
+function showWatchlist() {
+  elWatchListALL.innerHTML = '';
+
+  for (let watchItem of watchlist) {
+    let newBookmark = `<li class="bookmark watchlist-modal__item list-group-item d-flex align-items-center justify-content-between" data-unique-id="${watchItem.imdbId}">
+    <h3 class="bookmark__title h6">${watchItem.title} (${watchItem.year})</h3>
+    <button class="bookmark__remove btn btn-secondary btn-sm text-white" type="button" title="Remove from watchlist">&#10006;</button>
+    </li>`;
+    elWatchListALL.insertAdjacentHTML('beforeend', newBookmark)
+  }
+}
+
+elWatchListModal.addEventListener('show.bs.modal', showWatchlist);
+
+elWatchListModal.addEventListener('click', (e) => {
+  if (e.target.matches('.bookmark__remove')) {
+    const bookmarkIndex = watchlist.findIndex(bookmark => bookmark.imdbId === e.target.dataset.uniqueId);
+    const removedBookmark = watchlist.splice(bookmarkIndex, 1)[0];
+
+    const elBookmark = elMoviesList.querySelector(`.js-bookmark-button[data-imdb-id="${removedBookmark.imdbId}"]`);
+    elBookmark.classList.remove('btn-secondary');
+    elBookmark.classList.add('btn-outline-secondary');
+    elBookmark.textContent = 'Bookmark';
+
+    localStorage.setItem('watchlist', JSON.stringify(watchList));
+    showWatchlist();
+  }
+})
+
+function findMovies (titleRegex) {
+  return movies.filter(movie => {
+    const meetsCriteria = movie.title.match(titleRegex) && (elGenresSelect.value === 'All' || movie.categories.includes(elGenresSelect.value)) && (elMinYearInput.value.trim() === '' || movie.year >= Number(elMinYearInput.value)) && (elMaxYearInput.value.trim() === '' || movie.year <= Number(elMaxYearInput.value));
+    return meetsCriteria;
+  });
+}
+
+function sortMovies(movies, sortType) {
+  if (sortType === 'az') {
+    movies.sort((a, b) => {
+      if (a.title > b.title) return 1;
+      if (a.title < b.title) return -1;
+      return 0;
+    });
+  } else if (sortType === 'za') {
+    movies.sort((a, b) => {
+      if (a.title < b.title) return 1;
+      if (a.title > b.title) return -1;
+      return 0;
+    });
+  } else if (sortType === 'rating_asc') {
+    movies.sort((a, b) => a.imdbRating - b.imdbRating);
+  } else if (sortType === 'rating_desc') {
+    movies.sort((a, b) => b.imdbRating - a.imdbRating);
+  } else if (sortType === 'year_asc') {
+    movies.sort((a, b) => a.year - b.year);
+  } else if (sortType === 'year_desc') {
+    movies.sort((a, b) => b.year - a.year);
+  }
+}
 
 function onMovieSearchFormSubmit (evt) {
   evt.preventDefault();
 
-  const titleRegex = new RegExp(elMovieSearchInput.value, 'gi');
-  const yearDo = new RegExp(elMovieSearchYear.value, 'gi');
-  const yearEnd = new RegExp(elMovieSearchYearEnd.value, 'gi');
-  const foundMovies = findMovies(titleRegex,yearDo,yearEnd);
+  const titleRegex = new RegExp(elMovieSearchInput.value.trim(), 'gi');
+  const foundMovies = findMovies(titleRegex);
 
   if (foundMovies.length > 0) {
-    showMovies(foundMovies);
+    sortMovies(foundMovies, elSortSelect.value);
+    showMovies(foundMovies, titleRegex);
   } else {
     elMoviesList.innerHTML = '<div class="col-12">No film found</div>';
   }
+}
+
+function onMoviesListInfoButtonClick(evt) {
+  if (evt.target.matches('.js-more-info-button')) {
+    updateMovieInfoModal(evt.target.dataset.imdbId);
+    return;
+  }
+
+  if (evt.target.matches('.js-bookmark-button')){
+    const bookmarkButton = evt.target;
+
+    const movie = movies.find(movie => movie.imdbId === bookmarkButton.dataset.imdbId);
+    const movieIndex = watchlist.findIndex(movie => movie.imdbId === bookmarkButton.dataset.imdbId);
+
+    if (movieIndex === -1){
+      watchlist.push(movie);
+      bookmarkButton.classList.remove('btn-outline-success')
+      bookmarkButton.classList.add('btn-success');
+      bookmarkButton.textContent = 'Bookmarked ✔'
+    }else {
+      watchlist.splice(movieIndex, 1);
+      bookmarkButton.classList.add('btn-outline-success')
+      bookmarkButton.classList.remove('btn-success');
+      bookmarkButton.textContent = 'Bookmark'
+    }
+
+    localStorage.setItem('watchlist', JSON.stringify(watchlist));
+    console.log(watchlist);
+  }
+}
+
+function onMovieInfoModalHidden () {
+  elMovieInfoModalIFrame.src = '';
+
+  const elBookmarkBtn = elMoviesList.querySelector(`.js-bookmark-button[data-imdb-id="${elMovieInfoModal.dataset.uniqueId}"]`);
+  const indexMovieInWatchList = watchList.findIndex(movie => movie.imdbId === elBookmarkBtn.dataset.imdbId);
+
+  if (indexMovieInWatchList > -1) {
+    elBookmarkBtn.classList.add('btn-secondary');
+    elBookmarkBtn.classList.remove('btn-outline-secondary');
+    elBookmarkBtn.textContent = 'Bookmarked ✔';
+  } else {
+    elBookmarkBtn.classList.remove('btn-secondary');
+    elBookmarkBtn.classList.add('btn-outline-secondary');
+    elBookmarkBtn.textContent = 'Bookmark';
+  }
+}
+
+
+// EVENT LISTENERS
+if (elMoviesList) {
+  elMoviesList.addEventListener('click', onMoviesListInfoButtonClick);
+}
+
+
+// Stop iframe video playback on modal hide
+if (elMovieInfoModal) {
+  elMovieInfoModal.addEventListener('hidden.bs.modal', onMovieInfoModalHidden);
 }
 
 if (elMovieSearchForm) {
   elMovieSearchForm.addEventListener('submit', onMovieSearchFormSubmit);
 }
 
+// INITIATION
 getUniqueGenres();
 showGenreOptions();
-showMovies(movies.slice(0, 50));
-
-// Janr
-// Yil ...dan ...gacha
-// Reyting ...dan baland
+showMovies(movies.slice(0, 12), '');
